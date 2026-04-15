@@ -450,6 +450,48 @@ async function saveWeekNote(pid, wk, field, val) {
   }, 1000);
 }
 
+async function editGoal(pid, wk, gid, btn) {
+  const gtx = document.getElementById('gtx-' + gid);
+  const goal = DATA[pid].goals.find(g => g.id === gid);
+  if (!goal) return;
+  // Replace text display with input
+  const currentText = goal.text;
+  gtx.innerHTML = `<input type="text" id="gedit-inp-${gid}" value="${currentText.replace(/"/g,'&quot;')}" style="background:#1a2535;border:1px solid #3a4a5a;color:#e0e8f0;padding:6px 10px;border-radius:3px;font-size:13px;width:100%;box-sizing:border-box"><div style="display:flex;gap:6px;margin-top:6px"><button class="btn-sm bbl" onclick="saveEditGoal('${pid}',${wk},'${gid}')">Save</button><button class="btn-sm" style="background:#2a3a4a;color:#aaa" onclick="cancelEditGoal('${pid}',${wk},'${gid}','${currentText.replace(/'/g,"\\'")}')">Cancel</button></div>`;
+  document.getElementById('gedit-inp-' + gid).focus();
+}
+
+async function saveEditGoal(pid, wk, gid) {
+  const inp = document.getElementById('gedit-inp-' + gid);
+  if (!inp) return;
+  const newText = inp.value.trim();
+  if (!newText) return;
+  setSave('saving');
+  try {
+    await api(`goals/${gid}`, 'PATCH', { text: newText });
+    const goal = DATA[pid].goals.find(g => g.id === gid);
+    if (goal) goal.text = newText;
+    setSave('ok');
+    renderWeek(pid, wk);
+  } catch(e) { setSave('err'); }
+}
+
+async function cancelEditGoal(pid, wk, gid, origText) {
+  const goal = DATA[pid].goals.find(g => g.id === gid);
+  if (goal) goal.text = origText;
+  renderWeek(pid, wk);
+}
+
+async function deleteGoal(pid, wk, gid, btn) {
+  if (!confirm('Delete this goal? This cannot be undone.')) return;
+  setSave('saving');
+  try {
+    await api(`goals/${gid}`, 'DELETE', null);
+    DATA[pid].goals = DATA[pid].goals.filter(g => g.id !== gid);
+    setSave('ok');
+    renderWeek(pid, wk);
+  } catch(e) { setSave('err'); alert('Could not delete goal.'); }
+}
+
 async function addGoal(pid, wk) {
   const inp = document.getElementById(\`ai-\${pid}-\${wk}\`);
   if (!inp || !inp.value.trim()) return;
@@ -528,11 +570,14 @@ function tagH(src){
 
 // ── RENDER COMPONENTS ─────────────────────────────────────────────────
 function gItem(pid, wk, g, isAdmin) {
+  const canEdit = isAdmin && g.source === 'admin';
   const pn = isAdmin ? \`<div class="pnote"><div class="pnl">Private admin note</div><textarea class="note-ta" placeholder="Not visible to \${pid==='ryan'?'Ryan':'Luis'}..." onchange="saveNote('\${pid}',\${wk},'\${g.id}','private_note',this.value)">\${g.private_note||''}</textarea></div>\` : '';
-  return \`<div class="gi \${gc(g.status)}">
+  const editBtns = canEdit ? \`<div class="gedit-btns" style="display:flex;align-items:center"><button class="btn-sm" style="background:#2a3a4a;color:#aaa;font-size:10px;padding:3px 8px;margin-left:6px" onclick="editGoal('\${pid}',\${wk},'\${g.id}')">&#9998; Edit</button><button class="btn-sm" style="background:#3a1a1a;color:#c06060;font-size:10px;padding:3px 8px;margin-left:4px" onclick="deleteGoal('\${pid}',\${wk},'\${g.id}')">&#10005; Del</button></div>\` : '';
+  return \`<div class="gi \${gc(g.status)}" id="gi-\${g.id}">
     <div class="gtop">
       <button class="gsb \${sc(g.status)}" onclick="cycleStatus('\${pid}',\${wk},'\${g.id}')">\${sl(g.status)}</button>
-      <div class="gtx">\${g.text}\${tagH(g.source)}</div>
+      <div class="gtx" id="gtx-\${g.id}">\${g.text}\${tagH(g.source)}</div>
+      \${editBtns}
     </div>
     <div class="gn">
       <div class="fl">Outcome notes</div>
@@ -894,6 +939,15 @@ async function handleAPI(request, env) {
       updates.push('updated_at = unixepoch()');
       vals.push(goalId);
       await env.DB.prepare(`UPDATE goals SET ${updates.join(',')} WHERE id = ?`).bind(...vals).run();
+      return json({ ok: true });
+    }
+    if (method === 'DELETE') {
+      const goalId = parts[1];
+      const goal = await env.DB.prepare('SELECT person, source FROM goals WHERE id = ?').bind(goalId).first();
+      if (!goal) return err('Not found', 404);
+      if (user.role !== 'admin') return err('Forbidden', 403);
+      if (goal.source !== 'admin') return err('Cannot delete pre-loaded recurring goals', 403);
+      await env.DB.prepare('DELETE FROM goals WHERE id = ?').bind(goalId).run();
       return json({ ok: true });
     }
   }
