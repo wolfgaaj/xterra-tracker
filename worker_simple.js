@@ -246,10 +246,10 @@ let DATA = { ryan: null, luis: null };
 
 const PEOPLE = {
   ryan: { name: 'Ryan Anzalone', role: 'Director, Front End Operations', av: 'avr', ini: 'RA',
-    jdTitle: 'Director, Front End Operations', jdFile: '/api/pdf/ryan',
+    jdTitle: 'Director, Front End Operations', jdFile: '/jd/Ryan_Anzalone_JD_FrontEndOps_v3.pdf',
     jdDesc: 'Your full job description outlining role scope, operational boundaries, core responsibilities, minimum performance expectations, and reporting relationships. Effective April 21, 2026.' },
   luis: { name: 'Luis Martinez', role: 'Director, Back End Operations & Provider Oversight', av: 'avl', ini: 'LM',
-    jdTitle: 'Director, Back End Operations & Provider Oversight', jdFile: '/api/pdf/luis',
+    jdTitle: 'Director, Back End Operations & Provider Oversight', jdFile: '/jd/Luis_Martinez_JD_BackEndOps_v3.pdf',
     jdDesc: 'Your full job description outlining role scope, operational boundaries, core responsibilities including provider network management, recruitment, letter production, GHL migration, and the veteran help line build. Effective April 21, 2026.' },
 };
 
@@ -607,7 +607,7 @@ function jdTab(pid) {
     <div class="panel">
       <div class="pt">\${p.jdTitle}</div>
       <div style="font-size:12px;color:var(--xm);line-height:1.7;margin-bottom:16px">\${p.jdDesc}</div>
-      <a class="jdb" href="\${p.jdFile}" download target="_blank">
+      <a class="jdb" href="\${p.jdFile}" target="_blank">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="#5bb8e8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Download Job Description PDF
       </a>
@@ -812,18 +812,6 @@ async function handleAPI(request, env) {
     const hash = await hashPassword(password);
     await env.DB.prepare('UPDATE users SET password_hash = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?').bind(hash, user.id).run();
     return json({ ok: true });
-  }
-
-  // PDF downloads — no auth required
-  if (path === 'pdf/ryan') {
-    const resp = await fetch('https://raw.githubusercontent.com/wolfgaaj/xterra-tracker/main/Ryan_Anzalone_JD_FrontEndOps_v3.pdf');
-    const blob = await resp.arrayBuffer();
-    return new Response(blob, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="Ryan_Anzalone_JD_FrontEndOps_v3.pdf"', 'Access-Control-Allow-Origin': '*' } });
-  }
-  if (path === 'pdf/luis') {
-    const resp = await fetch('https://raw.githubusercontent.com/wolfgaaj/xterra-tracker/main/Luis_Martinez_JD_BackEndOps_v3.pdf');
-    const blob = await resp.arrayBuffer();
-    return new Response(blob, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="Luis_Martinez_JD_BackEndOps_v3.pdf"', 'Access-Control-Allow-Origin': '*' } });
   }
 
   const user = await getUser(request);
