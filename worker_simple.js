@@ -246,10 +246,10 @@ let DATA = { ryan: null, luis: null };
 
 const PEOPLE = {
   ryan: { name: 'Ryan Anzalone', role: 'Director, Front End Operations', av: 'avr', ini: 'RA',
-    jdTitle: 'Director, Front End Operations', jdFile: 'https://raw.githubusercontent.com/wolfgaaj/xterra-tracker/main/Ryan_Anzalone_JD_FrontEndOps_v3.pdf',
+    jdTitle: 'Director, Front End Operations', jdFile: '/api/pdf/ryan',
     jdDesc: 'Your full job description outlining role scope, operational boundaries, core responsibilities, minimum performance expectations, and reporting relationships. Effective April 21, 2026.' },
   luis: { name: 'Luis Martinez', role: 'Director, Back End Operations & Provider Oversight', av: 'avl', ini: 'LM',
-    jdTitle: 'Director, Back End Operations & Provider Oversight', jdFile: 'https://raw.githubusercontent.com/wolfgaaj/xterra-tracker/main/Luis_Martinez_JD_BackEndOps_v3.pdf',
+    jdTitle: 'Director, Back End Operations & Provider Oversight', jdFile: '/api/pdf/luis',
     jdDesc: 'Your full job description outlining role scope, operational boundaries, core responsibilities including provider network management, recruitment, letter production, GHL migration, and the veteran help line build. Effective April 21, 2026.' },
 };
 
@@ -917,6 +917,34 @@ async function handleAPI(request, env) {
     const p = PEOPLE[targetPerson];
     await sendEmail(ADMIN_EMAIL, `Week ${week} Goals Acknowledged — ${p.name}`, `<div style="font-family:Arial,sans-serif;padding:32px"><h2 style="color:#5bb8e8">Xterra Health Performance Tracker</h2><p>${p.name} acknowledged Week ${week} goals on ${new Date().toLocaleString()}.</p><p>Signed as: <em>${signedName}</em></p></div>`);
     return json({ ok: true });
+  }
+
+
+  // PDF proxy - serves PDFs with correct download headers
+  if (path === 'pdf/ryan' && method === 'GET') {
+    const pdfUrl = 'https://raw.githubusercontent.com/wolfgaaj/xterra-tracker/main/Ryan_Anzalone_JD_FrontEndOps_v3.pdf';
+    const resp = await fetch(pdfUrl);
+    const blob = await resp.arrayBuffer();
+    return new Response(blob, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="Ryan_Anzalone_JD_FrontEndOps_v3.pdf"',
+        ...CORS
+      }
+    });
+  }
+
+  if (path === 'pdf/luis' && method === 'GET') {
+    const pdfUrl = 'https://raw.githubusercontent.com/wolfgaaj/xterra-tracker/main/Luis_Martinez_JD_BackEndOps_v3.pdf';
+    const resp = await fetch(pdfUrl);
+    const blob = await resp.arrayBuffer();
+    return new Response(blob, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="Luis_Martinez_JD_BackEndOps_v3.pdf"',
+        ...CORS
+      }
+    });
   }
 
   return err('Not found', 404);
