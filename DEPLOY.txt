@@ -1,0 +1,120 @@
+# Xterra Health Performance Tracker — Deployment Guide
+# Complete setup: Cloudflare Pages + D1 + Resend email
+# Estimated time: 30–45 minutes
+
+═══════════════════════════════════════════════
+STEP 1 — INSTALL WRANGLER (Cloudflare CLI)
+═══════════════════════════════════════════════
+
+Open your terminal (Mac: Terminal app, Windows: Command Prompt) and run:
+
+  npm install -g wrangler
+
+Then log in to your Cloudflare account:
+
+  wrangler login
+
+This opens a browser window — approve the login.
+
+
+═══════════════════════════════════════════════
+STEP 2 — CREATE THE D1 DATABASE
+═══════════════════════════════════════════════
+
+  wrangler d1 create xterra-tracker-db
+
+Copy the database_id from the output. Open wrangler.toml and replace:
+  REPLACE_WITH_YOUR_D1_DATABASE_ID
+with the actual ID.
+
+
+═══════════════════════════════════════════════
+STEP 3 — RUN DATABASE MIGRATIONS
+═══════════════════════════════════════════════
+
+  wrangler d1 execute xterra-tracker-db --file=migrations/001_init.sql --remote
+
+
+═══════════════════════════════════════════════
+STEP 4 — SEED PASSWORDS AND RECURRING GOALS
+═══════════════════════════════════════════════
+
+  node seed.js > seed_output.sql
+  wrangler d1 execute xterra-tracker-db --file=seed_output.sql --remote
+
+Default login credentials (change these after first login):
+  Admin:  awolfgang@xterrahealth.com  /  Xterra@Admin2026
+  Ryan:   ranzalone@xterrahealth.com  /  Xterra@Ryan2026
+  Luis:   lmartinez@xterrahealth.com  /  Xterra@Luis2026
+
+
+═══════════════════════════════════════════════
+STEP 5 — SET UP RESEND (email delivery)
+═══════════════════════════════════════════════
+
+1. Go to https://resend.com and create a free account
+2. Add and verify your domain: xterrahealth.com
+   (Resend will give you DNS records to add in Cloudflare — takes 5 min)
+3. Create an API key in Resend dashboard
+4. Open wrangler.toml and replace REPLACE_WITH_YOUR_RESEND_API_KEY
+
+
+═══════════════════════════════════════════════
+STEP 6 — SET REMAINING CONFIG VALUES
+═══════════════════════════════════════════════
+
+In wrangler.toml, fill in:
+
+  JWT_SECRET = any random 64-character string (generate at: https://generate-secret.vercel.app/64)
+  APP_URL    = https://xterra-tracker.pages.dev  (or your custom domain)
+
+
+═══════════════════════════════════════════════
+STEP 7 — ADD PDF FILES
+═══════════════════════════════════════════════
+
+Create the folder: public/jd/
+Copy both PDF files into it:
+  public/jd/Ryan_Anzalone_JD_FrontEndOps_v3.pdf
+  public/jd/Luis_Martinez_JD_BackEndOps_v3.pdf
+
+
+═══════════════════════════════════════════════
+STEP 8 — DEPLOY TO CLOUDFLARE PAGES
+═══════════════════════════════════════════════
+
+  wrangler pages deploy public --project-name=xterra-tracker
+
+First deploy creates the project. Note the URL it gives you (e.g. https://xterra-tracker.pages.dev)
+Update APP_URL in wrangler.toml with this URL, then redeploy:
+
+  wrangler pages deploy public --project-name=xterra-tracker
+
+
+═══════════════════════════════════════════════
+STEP 9 — (OPTIONAL) ADD CUSTOM DOMAIN
+═══════════════════════════════════════════════
+
+In Cloudflare dashboard:
+  Pages → xterra-tracker → Custom Domains → Add
+  e.g. tracker.xterrahealth.com
+
+Since your domain is already on Cloudflare, DNS is automatic.
+
+
+═══════════════════════════════════════════════
+STEP 10 — FIRST LOGIN & PASSWORD CHANGES
+═══════════════════════════════════════════════
+
+1. Open your deployed URL
+2. Log in as admin with the credentials from Step 4
+3. Use "Forgot Password" for Ryan and Luis to send them reset links
+   OR share their temporary passwords securely and have them reset on first login
+
+
+═══════════════════════════════════════════════
+NEED HELP?
+═══════════════════════════════════════════════
+
+If you get stuck on any step, come back to Claude with the exact
+error message and we'll work through it together.

@@ -1,0 +1,13 @@
+name = "xterra-tracker"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "xterra-tracker-db"
+database_id = "a3791b68-142b-41d0-a518-3204a052c991"
+[vars]
+RESEND_API_KEY = "REPLACE_WITH_YOUR_RESEND_API_KEY"
+ADMIN_EMAIL = "awolfgang@xterrahealth.com"
+JWT_SECRET = "REPLACE_WITH_A_RANDOM_64_CHAR_STRING"
+APP_URL = "REPLACE_WITH_YOUR_PAGES_URL"
