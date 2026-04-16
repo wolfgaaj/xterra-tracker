@@ -450,16 +450,33 @@ async function saveWeekNote(pid, wk, field, val) {
   }, 1000);
 }
 
-async function editGoal(pid, wk, gid, btn) {
+async function editGoal(pid, wk, gid) {
   const gtx = document.getElementById('gtx-' + gid);
   const goal = DATA[pid].goals.find(g => g.id === gid);
   if (!goal) return;
-  // Replace text display with input
-  const currentText = goal.text;
-  gtx.innerHTML = `<input type="text" id="gedit-inp-${gid}" value="${currentText.replace(/"/g,'&quot;')}" style="background:#1a2535;border:1px solid #3a4a5a;color:#e0e8f0;padding:6px 10px;border-radius:3px;font-size:13px;width:100%;box-sizing:border-box"><div style="display:flex;gap:6px;margin-top:6px"><button class="btn-sm bbl" onclick="saveEditGoal('${pid}',${wk},'${gid}')">Save</button><button class="btn-sm" style="background:#2a3a4a;color:#aaa" onclick="cancelEditGoal('${pid}',${wk},'${gid}','${currentText.replace(/'/g,"\\'")}')">Cancel</button></div>`;
-  document.getElementById('gedit-inp-' + gid).focus();
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.id = 'gedit-inp-' + gid;
+  inp.value = goal.text;
+  inp.style.cssText = 'background:#1a2535;border:1px solid #3a4a5a;color:#e0e8f0;padding:6px 10px;border-radius:3px;font-size:13px;width:100%;box-sizing:border-box';
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:6px;margin-top:6px';
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-sm bbl';
+  saveBtn.textContent = 'Save';
+  saveBtn.onclick = () => saveEditGoal(pid, wk, gid);
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn-sm';
+  cancelBtn.style.cssText = 'background:#2a3a4a;color:#aaa';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = () => renderWeek(pid, wk);
+  btnRow.appendChild(saveBtn);
+  btnRow.appendChild(cancelBtn);
+  gtx.innerHTML = '';
+  gtx.appendChild(inp);
+  gtx.appendChild(btnRow);
+  inp.focus();
 }
-
 async function saveEditGoal(pid, wk, gid) {
   const inp = document.getElementById('gedit-inp-' + gid);
   if (!inp) return;
@@ -473,12 +490,6 @@ async function saveEditGoal(pid, wk, gid) {
     setSave('ok');
     renderWeek(pid, wk);
   } catch(e) { setSave('err'); }
-}
-
-async function cancelEditGoal(pid, wk, gid, origText) {
-  const goal = DATA[pid].goals.find(g => g.id === gid);
-  if (goal) goal.text = origText;
-  renderWeek(pid, wk);
 }
 
 async function deleteGoal(pid, wk, gid, btn) {
