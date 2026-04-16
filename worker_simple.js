@@ -484,7 +484,7 @@ async function saveEditGoal(pid, wk, gid) {
   if (!newText) return;
   setSave('saving');
   try {
-    await api('goals/' + gid, 'PATCH', { text: newText });
+    await api('goals/'+gid, 'PATCH', { text: newText });
     const goal = DATA[pid].goals.find(g => g.id === gid);
     if (goal) goal.text = newText;
     setSave('ok');
@@ -496,7 +496,7 @@ async function deleteGoal(pid, wk, gid, btn) {
   if (!confirm('Delete this goal? This cannot be undone.')) return;
   setSave('saving');
   try {
-    await api('goals/' + gid, 'DELETE', null);
+    await api('goals/'+gid, 'DELETE', null);
     DATA[pid].goals = DATA[pid].goals.filter(g => g.id !== gid);
     setSave('ok');
     renderWeek(pid, wk);
@@ -1016,4 +1016,3 @@ async function handleAPI(request, env) {
 
   return err('Not found', 404);
 }
-
